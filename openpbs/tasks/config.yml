@@ -1,0 +1,43 @@
+---
+  - name: Add cluster hostnames
+    lineinfile:
+      dest: /etc/hosts
+      line: "{{ hostvars[item].ansible_host }} {{ item }}"
+      regexp: ".*{{ item }}$"
+      state: present
+    with_items: "{{ groups.cluster }}"
+    become: true
+
+  - name: Write PBS config
+    become: true
+    template:
+      src: pbs.conf.j2
+      dest: /etc/pbs.conf
+    register: pbs_config
+
+  - name: Restart service
+    when: pbs_config.changed
+    become: true
+    systemd:
+      state: restarted
+      name: pbs
+
+  - name: (server) Set to active mode
+    when: openpbs_type == "server"
+    become: true
+    changed_when: false
+    command:
+      argv:
+        - "{{ openpbs_install_dir }}/bin/qmgr"
+        - "-c"
+        - "set server scheduling=true"
+
+#  - name: (server) Add queues
+#    when: openpbs_type == "server"
+#    become: true
+#    command:
+#      argv:
+#        - "{{ openpbs_install_dir }}/bin/qmgr"
+#        - "-c"
+#        - "create queue {{ item }} queue_type=execution"
+#    with_items: "{{ openpbs_queues }}"

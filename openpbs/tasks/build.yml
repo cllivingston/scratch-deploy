@@ -1,0 +1,85 @@
+---
+  - name: Install build packages
+    become: true
+    ansible.builtin.apt:
+      pkg: "{{ openpbs_build_packages }}"
+
+  - name: Clone OpenPBS repo
+    ansible.builtin.git:
+      repo: "{{ openpbs_repo_url }}"
+      version: "{{ openpbs_repo_tag }}"
+      dest: /tmp/openpbs
+      force: true
+
+  - name: Generate configure script
+    command: ./autogen.sh
+    args:
+      chdir: /tmp/openpbs
+
+  - name: Run configure script (server)
+    when: openpbs_type == 'server'
+    command:
+      chdir: /tmp/openpbs
+      argv:
+        - ./configure
+        - "--prefix={{ openpbs_install_dir }}"
+        - "--enable-ptl"
+        - "--enable-clients"
+        - "--with-scp"
+        - "--enable-syslog"
+        - "--with-pbs-server-home={{ openpbs_server_home }}"
+
+  - name: Run configure script (client)
+    when: openpbs_type == 'client'
+    command:
+      chdir: /tmp/openpbs
+      argv:
+        - ./configure
+        - "--disable-server"
+        - "--disable-gui"
+        - "--enable-syslog"
+        - "--prefix={{ openpbs_install_dir }}"
+        - "--enable-ptl"
+        - "--enable-clients"
+        - "--with-scp"
+        - "--with-pbs-server-home={{ openpbs_server_home }}"
+        - "--enable-mom"
+
+  - name: Build OpenPBS
+    command:
+      chdir: /tmp/openpbs
+      argv:
+        - make
+        - "-j4"
+
+  - name: Install OpenPBS binaries
+    become: true
+    command:
+      chdir: /tmp/openpbs
+      argv:
+        - make
+        - install
+
+  - name: Apply permissions (PBS IFF)
+    become: true
+    file:
+      mode: '4755'
+      path: "{{ openpbs_install_dir }}/sbin/pbs_iff"
+
+  - name: Apply permissions (PBS RCP)
+    become: true
+    file:
+      mode: '4755'
+      path: "{{ openpbs_install_dir }}/sbin/pbs_rcp"
+
+  - name: Run OpenPBS post-install
+    become: true
+    command: "{{ openpbs_install_dir }}/libexec/pbs_postinstall"
+
+  - name: Start service
+    become: true
+    systemd:
+      state: restarted
+      name: pbs
+    retries: 3
+    delay: 5

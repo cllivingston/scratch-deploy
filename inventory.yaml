@@ -1,0 +1,78 @@
+---
+cluster:
+  hosts:
+    openpbs-01:
+      ansible_host: 10.0.1.171
+      ansible_user: remote
+      openpbs_type: server
+    openpbs-02:
+      ansible_host: 10.0.1.172
+      ansible_user: remote
+      openpbs_type: client
+      openpbs_node_type: time-shared
+    openpbs-03:
+      ansible_host: 10.0.1.173
+      ansible_user: remote
+      openpbs_type: client
+      openpbs_node_type: time-shared
+    openpbs-04:
+      ansible_host: 10.0.1.174
+      ansible_user: remote
+      openpbs_type: client
+      openpbs_node_type: time-shared
+
+# keeping everything in inventory for now
+
+  vars:
+    openpbs_rebuild: false
+    openpbs_repo_url: https://github.com/openpbs/openpbs
+    openpbs_repo_tag: v22.05.11
+    openpbs_server_home: /usr/local/spool/pbs
+    openpbs_install_dir: /opt/pbs
+    openpbs_default_server: openpbs-01
+    openpbs_queues:
+      queue01:
+        resources_min.cput: "1"
+        resources_max.cput: "24:00:00"
+        resources_max.mem: "64mb"
+      queue02:
+        resources_min.cput: "1"
+        resources_max.cput: "6:00:00"
+        resources_max.mem: "16mb"
+    openpbs_build_packages:
+      - gcc
+      - make
+      - libtool
+      - libhwloc-dev
+      - libx11-dev
+      - libxt-dev
+      - libedit-dev
+      - libical-dev
+      - ncurses-dev
+      - perl
+      - postgresql-server-dev-all
+      - postgresql-contrib 
+      - python3-dev
+      - tcl-dev
+      - tk-dev
+      - swig
+      - libexpat-dev
+      - libssl-dev
+      - libxext-dev
+      - libxft-dev
+      - autoconf 
+      - automake
+      - g++
+
+    openpbs_run_packages:
+      - expat
+      - libedit2
+      - postgresql
+      - python3
+      - postgresql-contrib
+      - sendmail-bin
+      - sudo
+      - tcl
+      - tk
+      - libical3
+      - postgresql-server-dev-all

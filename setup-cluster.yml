@@ -1,0 +1,23 @@
+---
+
+  - name: Setup PBS cluster
+    hosts: cluster
+    tasks:
+      - name: Rebuild
+        when: openpbs_rebuild
+        import_role:
+          name: openpbs
+          tasks_from: build
+
+      - name: Config
+        import_role:
+          name: openpbs
+          tasks_from: config
+
+      - name: Verify service is started
+        become: true
+        systemd:
+          state: started
+          name: pbs
+
+
