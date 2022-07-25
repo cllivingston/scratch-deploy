@@ -32,12 +32,28 @@
         - "-c"
         - "set server scheduling=true"
 
-#  - name: (server) Add queues
-#    when: openpbs_type == "server"
-#    become: true
-#    command:
-#      argv:
-#        - "{{ openpbs_install_dir }}/bin/qmgr"
-#        - "-c"
-#        - "create queue {{ item }} queue_type=execution"
-#    with_items: "{{ openpbs_queues }}"
+  - name: (server) Add queues
+    when: openpbs_type == "server"
+    become: true
+    command:
+      argv:
+        - "{{ openpbs_install_dir }}/bin/qmgr"
+        - "-c"
+        - "create queue {{ item }} queue_type=execution"
+    with_items: "{{ openpbs_queues }}"
+    register: result
+    failed_when: ( result.rc != 0 ) and ( "already exists" not in result.stderr )
+    changed_when: ( 'already exists' not in result.stderr )
+
+  - name: (server) Add nodes
+    when: openpbs_type == "server" and hostvars[item].openpbs_type == "client"
+    become: true
+    command:
+      argv:
+        - "{{ openpbs_install_dir }}/bin/qmgr"
+        - "-c"
+        - "create node {{ item }}"
+    register: result
+    failed_when: ( result.rc != 0 ) and ( "already exists" not in result.stderr )
+    changed_when: ( 'already exists' not in result.stderr )
+    with_items: "{{ groups.cluster }}"
